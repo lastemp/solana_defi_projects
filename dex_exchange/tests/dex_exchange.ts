@@ -30,12 +30,19 @@ describe("dex_exchange", () => {
     mint: mintTokenA.publicKey,
     owner: payer.publicKey,
   });
+  const mintTokenB = anchor.web3.Keypair.generate(); // dummy wbtc token created for test purposes
+  const tokenAccountB = anchor.utils.token.associatedAddress({
+    mint: mintTokenB.publicKey,
+    owner: payer.publicKey,
+  });
 
   let firstLiquidityProviderOwner = anchor.web3.Keypair.generate();
   let firstLiquidityProviderOwnerATA = anchor.web3.Keypair.generate();
+  let firstLiquidityProviderOwnerATATokenB = anchor.web3.Keypair.generate();
 
   let secondLiquidityProviderOwner = anchor.web3.Keypair.generate();
   let secondLiquidityProviderOwnerATA = anchor.web3.Keypair.generate();
+  let secondLiquidityProviderOwnerATATokenB = anchor.web3.Keypair.generate();
 
   let firstTraderOwner = anchor.web3.Keypair.generate();
   let firstTraderOwnerATA = anchor.web3.Keypair.generate();
@@ -44,6 +51,7 @@ describe("dex_exchange", () => {
   let secondTraderOwnerATA = anchor.web3.Keypair.generate();
 
   let treasuryVaultATA: Account;
+  let treasuryVaultATATokenB: Account;
 
   // pdaAuth
   let [pdaAuth, adminPdaBump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -183,7 +191,7 @@ describe("dex_exchange", () => {
     try {
       let requestParams = {
         tokenA: mintTokenA.publicKey, // token A
-        tokenB: mintTokenA.publicKey, // token B
+        tokenB: mintTokenB.publicKey, // token B
         decimals: 9, // token mint in smallest unit i.e 9 decimals
       };
 
@@ -205,7 +213,7 @@ describe("dex_exchange", () => {
     }
   });
 
-  it("Is create token!", async () => {
+  it("Is create token A!", async () => {
     console.log("mint token: ", mintTokenA.publicKey.toBase58());
     console.log("token account: ", tokenAccountA.toBase58());
 
@@ -233,7 +241,35 @@ describe("dex_exchange", () => {
     }
   });
 
-  it("Is token transfer - first liquidity provider", async () => {
+  it("Is create token B!", async () => {
+    console.log("mint token: ", mintTokenB.publicKey.toBase58());
+    console.log("token account: ", tokenAccountB.toBase58());
+
+    try {
+      let requestParams = {
+        amount: new anchor.BN(100),
+      };
+
+      const tx = await program.methods
+        .createToken(requestParams)
+        .accounts({
+          owner: payer.publicKey,
+          liquidityPool: liquidityPool,
+          mintToken: mintTokenB.publicKey,
+          tokenAccount: tokenAccountB,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associateTokenProgram: associateTokenProgram,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([mintTokenB])
+        .rpc();
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("Is token transfer A - first liquidity provider", async () => {
     console.log(
       "liquidity provider owner token account: ",
       firstLiquidityProviderOwnerATA.publicKey.toBase58()
@@ -276,7 +312,50 @@ describe("dex_exchange", () => {
     }
   });
 
-  it("Is token transfer - second liquidity provider", async () => {
+  it("Is token transfer B - first liquidity provider", async () => {
+    console.log(
+      "liquidity provider owner token account: ",
+      firstLiquidityProviderOwnerATATokenB.publicKey.toBase58()
+    );
+
+    try {
+      await createAccount(
+        provider.connection,
+        firstLiquidityProviderOwner,
+        mintTokenB.publicKey,
+        firstLiquidityProviderOwner.publicKey,
+        firstLiquidityProviderOwnerATATokenB
+      );
+    } catch (error) {
+      console.log(error);
+    }
+
+    try {
+      let requestParams = {
+        amount: new anchor.BN(30),
+      };
+      const tx = await program.methods
+        .transferToken(requestParams)
+        .accounts({
+          owner: payer.publicKey,
+          liquidityPool: liquidityPool,
+          mintToken: mintTokenB.publicKey,
+          fromAccount: tokenAccountB,
+          toAccount: firstLiquidityProviderOwnerATATokenB.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associateTokenProgram: associateTokenProgram,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([mintTokenB])
+        .rpc();
+
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("Is token transfer A - second liquidity provider", async () => {
     console.log(
       "liquidity provider owner token account: ",
       secondLiquidityProviderOwnerATA.publicKey.toBase58()
@@ -311,6 +390,49 @@ describe("dex_exchange", () => {
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .signers([mintTokenA])
+        .rpc();
+
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("Is token transfer B - second liquidity provider", async () => {
+    console.log(
+      "liquidity provider owner token account: ",
+      secondLiquidityProviderOwnerATATokenB.publicKey.toBase58()
+    );
+
+    try {
+      await createAccount(
+        provider.connection,
+        secondLiquidityProviderOwner,
+        mintTokenB.publicKey,
+        secondLiquidityProviderOwner.publicKey,
+        secondLiquidityProviderOwnerATATokenB
+      );
+    } catch (error) {
+      console.log(error);
+    }
+
+    try {
+      let requestParams = {
+        amount: new anchor.BN(40),
+      };
+      const tx = await program.methods
+        .transferToken(requestParams)
+        .accounts({
+          owner: payer.publicKey,
+          liquidityPool: liquidityPool,
+          mintToken: mintTokenB.publicKey,
+          fromAccount: tokenAccountB,
+          toAccount: secondLiquidityProviderOwnerATATokenB.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associateTokenProgram: associateTokenProgram,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([mintTokenB])
         .rpc();
 
       console.log("Your transaction signature", tx);
@@ -372,7 +494,7 @@ describe("dex_exchange", () => {
       await createAccount(
         provider.connection,
         secondTraderOwner,
-        mintTokenA.publicKey,
+        mintTokenB.publicKey,
         secondTraderOwner.publicKey,
         secondTraderOwnerATA
       );
@@ -389,14 +511,14 @@ describe("dex_exchange", () => {
         .accounts({
           owner: payer.publicKey,
           liquidityPool: liquidityPool,
-          mintToken: mintTokenA.publicKey,
-          fromAccount: tokenAccountA,
+          mintToken: mintTokenB.publicKey,
+          fromAccount: tokenAccountB,
           toAccount: secondTraderOwnerATA.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           associateTokenProgram: associateTokenProgram,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
-        .signers([mintTokenA])
+        .signers([mintTokenB])
         .rpc();
 
       console.log("Your transaction signature", tx);
@@ -490,6 +612,22 @@ describe("dex_exchange", () => {
     }
 
     try {
+      treasuryVaultATATokenB = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        mintTokenB.publicKey,
+        treasuryVault,
+        true
+      );
+      console.log(
+        "treasuryVaultATA token b address: " +
+          treasuryVaultATATokenB.address.toBase58()
+      );
+    } catch (error) {
+      console.log(error);
+    }
+
+    try {
       let requestParams = {
         // 1 amount of token to transfer (in smallest unit i.e 9 decimals)
         amountA: new anchor.BN(10),
@@ -502,8 +640,10 @@ describe("dex_exchange", () => {
           owner: firstLiquidityProviderOwner.publicKey,
           liquidityPool: liquidityPool,
           liquidityProvider: firstLiquidityProvider,
-          senderTokens: firstLiquidityProviderOwnerATA.publicKey,
-          recipientTokens: treasuryVaultATA.address,
+          senderTokensA: firstLiquidityProviderOwnerATA.publicKey,
+          senderTokensB: firstLiquidityProviderOwnerATATokenB.publicKey,
+          recipientTokensA: treasuryVaultATA.address,
+          recipientTokensB: treasuryVaultATATokenB.address,
           mintToken: mintTokenA.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           associateTokenProgram: associateTokenProgram,
@@ -546,6 +686,22 @@ describe("dex_exchange", () => {
     }
 
     try {
+      treasuryVaultATATokenB = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        mintTokenB.publicKey,
+        treasuryVault,
+        true
+      );
+      console.log(
+        "treasuryVaultATA token b address: " +
+          treasuryVaultATATokenB.address.toBase58()
+      );
+    } catch (error) {
+      console.log(error);
+    }
+
+    try {
       let requestParams = {
         // 1 amount of token to transfer (in smallest unit i.e 9 decimals)
         amountA: new anchor.BN(20),
@@ -558,8 +714,10 @@ describe("dex_exchange", () => {
           owner: secondLiquidityProviderOwner.publicKey,
           liquidityPool: liquidityPool,
           liquidityProvider: secondLiquidityProvider,
-          senderTokens: secondLiquidityProviderOwnerATA.publicKey,
-          recipientTokens: treasuryVaultATA.address,
+          senderTokensA: secondLiquidityProviderOwnerATA.publicKey,
+          senderTokensB: secondLiquidityProviderOwnerATATokenB.publicKey,
+          recipientTokensA: treasuryVaultATA.address,
+          recipientTokensB: treasuryVaultATATokenB.address,
           mintToken: mintTokenA.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           associateTokenProgram: associateTokenProgram,
@@ -641,15 +799,15 @@ describe("dex_exchange", () => {
 
   it("Is swap token - second trader!", async () => {
     try {
-      treasuryVaultATA = await getOrCreateAssociatedTokenAccount(
+      treasuryVaultATATokenB = await getOrCreateAssociatedTokenAccount(
         provider.connection,
         payer,
-        mintTokenA.publicKey,
+        mintTokenB.publicKey,
         treasuryVault,
         true
       );
       console.log(
-        "treasuryVaultATA address: " + treasuryVaultATA.address.toBase58()
+        "treasuryVaultATA address: " + treasuryVaultATATokenB.address.toBase58()
       );
     } catch (error) {
       console.log(error);
@@ -659,7 +817,7 @@ describe("dex_exchange", () => {
       let requestParams = {
         // 1 amount of token to transfer (in smallest unit i.e 9 decimals)
         amountIn: new anchor.BN(3),
-        tokenIn: mintTokenA.publicKey,
+        tokenIn: mintTokenB.publicKey,
       };
 
       const tx = await program.methods
@@ -669,8 +827,8 @@ describe("dex_exchange", () => {
           liquidityPool: liquidityPool,
           trader: secondTrader,
           senderTokens: secondTraderOwnerATA.publicKey,
-          recipientTokens: treasuryVaultATA.address,
-          mintToken: mintTokenA.publicKey,
+          recipientTokens: treasuryVaultATATokenB.address,
+          mintToken: mintTokenB.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           associateTokenProgram: associateTokenProgram,
           systemProgram: anchor.web3.SystemProgram.programId,

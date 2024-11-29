@@ -24,9 +24,13 @@ pub struct AddLiquidity<'info> {
     )]
     pub liquidity_provider: Account<'info, LiquidityProvider>,
     #[account(mut)]
-    pub sender_tokens: Account<'info, TokenAccount>,
+    pub sender_tokens_a: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub recipient_tokens: Account<'info, TokenAccount>,
+    pub sender_tokens_b: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub recipient_tokens_a: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub recipient_tokens_b: Account<'info, TokenAccount>,
     #[account(mut)]
     pub mint_token: Account<'info, Mint>,
     // mut makes it changeble (mutable)
@@ -54,8 +58,10 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     }
 
     let sender = &ctx.accounts.owner;
-    let sender_tokens = &ctx.accounts.sender_tokens;
-    let recipient_tokens = &ctx.accounts.recipient_tokens;
+    let sender_tokens_a = &ctx.accounts.sender_tokens_a;
+    let sender_tokens_b = &ctx.accounts.sender_tokens_b;
+    let recipient_tokens_a = &ctx.accounts.recipient_tokens_a;
+    let recipient_tokens_b = &ctx.accounts.recipient_tokens_b;
     let token_program = &ctx.accounts.token_program;
     let liquidity_pool = &mut ctx.accounts.liquidity_pool;
     let liquidity_provider = &mut ctx.accounts.liquidity_provider;
@@ -93,23 +99,44 @@ pub fn add_liquidity(ctx: Context<AddLiquidity>, params: &AddLiquidityParams) ->
     // lets get the amount in decimal format
     // 10 ** 9 * 3(base 10, 9 decimals, 3 amount), // 3 amount of token to transfer (in smallest unit i.e 9 decimals)
     let result = (base).pow(exponent);
-    let _amount = (amount_a as u64)
+    let amount_a = (amount_a as u64)
+        .checked_mul(result as u64)
+        .ok_or(DexError::InvalidArithmeticOperation)?;
+
+    // lets get the amount in decimal format
+    // 10 ** 9 * 3(base 10, 9 decimals, 3 amount), // 3 amount of token to transfer (in smallest unit i.e 9 decimals)
+    let result = (base).pow(exponent);
+    let amount_b = (amount_b as u64)
         .checked_mul(result as u64)
         .ok_or(DexError::InvalidArithmeticOperation)?;
 
     // check if liquidity provider exists before adding
     liquidity_pool.liquidity_providers.push(*sender.key);
 
+    // token a
     transfer(
         CpiContext::new(
             token_program.to_account_info(),
             Transfer {
-                from: sender_tokens.to_account_info(),
-                to: recipient_tokens.to_account_info(),
+                from: sender_tokens_a.to_account_info(),
+                to: recipient_tokens_a.to_account_info(),
                 authority: sender.to_account_info(),
             },
         ),
-        _amount,
+        amount_a,
+    )?;
+
+    // token b
+    transfer(
+        CpiContext::new(
+            token_program.to_account_info(),
+            Transfer {
+                from: sender_tokens_b.to_account_info(),
+                to: recipient_tokens_b.to_account_info(),
+                authority: sender.to_account_info(),
+            },
+        ),
+        amount_b,
     )?;
 
     Ok(())
