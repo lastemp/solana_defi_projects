@@ -214,7 +214,7 @@ describe("dex_exchange", () => {
   });
 
   it("Is create token A!", async () => {
-    console.log("mint token: ", mintTokenA.publicKey.toBase58());
+    console.log("mint token a: ", mintTokenA.publicKey.toBase58());
     console.log("token account: ", tokenAccountA.toBase58());
 
     try {
@@ -242,7 +242,7 @@ describe("dex_exchange", () => {
   });
 
   it("Is create token B!", async () => {
-    console.log("mint token: ", mintTokenB.publicKey.toBase58());
+    console.log("mint token b: ", mintTokenB.publicKey.toBase58());
     console.log("token account: ", tokenAccountB.toBase58());
 
     try {
@@ -443,7 +443,7 @@ describe("dex_exchange", () => {
 
   it("Is token transfer - first trader", async () => {
     console.log(
-      "trader owner token account: ",
+      "first trader owner token account: ",
       firstTraderOwnerATA.publicKey.toBase58()
     );
 
@@ -486,7 +486,7 @@ describe("dex_exchange", () => {
 
   it("Is token transfer - second trader", async () => {
     console.log(
-      "trader owner token account: ",
+      "second trader owner token account: ",
       secondTraderOwnerATA.publicKey.toBase58()
     );
 
