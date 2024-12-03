@@ -1,17 +1,16 @@
-# dex_exchange
+# derivatives_contract
 
-This is a Decentralised Exchange Rust Smart Contract(Solana Blockchain).
-This Smart Contract utilises liquidity pools to overcome the order book problem and on automated market making algorithms to facilitate price discovery.
+This is a Derivatives Rust Smart Contract(Solana Blockchain).
+Derivatives are contracts deriving value from underlying assets; Futures, options and swaps are types of derivative contracts.
 
 Below are some features contained in the program:
 
-- Initialise liquidity pool
-- Register liquidity provider(s)
-- Register trader(s)
-- Add liquidity using USDC token
-- Swap token using USDC token
-- Create USDC token (*for test purposes)
-- Transfer USDC token
+- Initialise derivative contract
+- Create futures contract
+- Deposit asset represented as wBTC token
+- Settle futures contract
+- Create wBTC token (*for test purposes)
+- Transfer wBTC token
 
 ## Getting started
 

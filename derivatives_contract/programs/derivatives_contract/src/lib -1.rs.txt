@@ -1,0 +1,112 @@
+use anchor_lang::prelude::*;
+
+declare_id!("HjQAsSTgfHJZrEgwtDTztwaphTqVjgQ148JZinYrj6VD");
+
+#[program]
+pub mod derivatives_contract {
+    use super::*;
+
+    pub fn create_futures_contract(
+        ctx: Context<CreateContract>,
+        expiry_date: i64,
+        underlying_asset: String,
+        price: u64,
+        buyer: Pubkey,
+        seller: Pubkey,
+        custodian: Pubkey,
+    ) -> Result<()> {
+        let contract = &mut ctx.accounts.derivative_contract;
+        contract.contract_type = ContractType::Futures;
+        contract.expiry_date = expiry_date;
+        contract.underlying_asset = underlying_asset;
+        contract.price = price;
+        contract.buyer = Some(buyer);
+        contract.seller = Some(seller);
+        contract.custodian = Some(custodian);
+
+        // Logic to ensure the seller locks the asset with the custodian
+        /*
+        require!(
+            ctx.accounts.seller.key() == seller,
+            CustomError::InvalidSeller
+        );
+        require!(
+            ctx.accounts.custodian.key() == custodian,
+            CustomError::InvalidCustodian
+        );
+        */
+
+        Ok(())
+    }
+
+    pub fn create_options_contract(
+        ctx: Context<CreateContract>,
+        expiry_date: i64,
+        underlying_asset: String,
+        strike_price: u64,
+        option_type: OptionType,
+    ) -> Result<()> {
+        let contract = &mut ctx.accounts.derivative_contract;
+        contract.contract_type = ContractType::Options;
+        contract.expiry_date = expiry_date;
+        contract.underlying_asset = underlying_asset;
+        contract.price = strike_price;
+        contract.option_type = Some(option_type);
+        Ok(())
+    }
+
+    pub fn create_swap_contract(
+        ctx: Context<CreateContract>,
+        notional_amount: u64,
+        fixed_rate: u64,
+        floating_rate: u64,
+    ) -> Result<()> {
+        let contract = &mut ctx.accounts.derivative_contract;
+        contract.contract_type = ContractType::Swaps;
+        contract.notional_amount = Some(notional_amount);
+        contract.fixed_rate = Some(fixed_rate);
+        contract.floating_rate = Some(floating_rate);
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct CreateContract<'info> {
+    #[account(init, payer = user, space = 8 + DerivativeContract::SIZE)]
+    pub derivative_contract: Account<'info, DerivativeContract>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[account]
+pub struct DerivativeContract {
+    pub contract_type: ContractType,
+    pub expiry_date: i64,
+    pub underlying_asset: String,
+    pub price: u64,
+    pub buyer: Option<Pubkey>,
+    pub seller: Option<Pubkey>,
+    pub custodian: Option<Pubkey>, // New field
+    pub option_type: Option<OptionType>,
+    pub notional_amount: Option<u64>,
+    pub fixed_rate: Option<u64>,
+    pub floating_rate: Option<u64>,
+}
+
+impl DerivativeContract {
+    pub const SIZE: usize = 1 + 8 + 32 + 8 + 32 + 32 + 32 + 1 + (8 * 3); // Updated size
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+pub enum ContractType {
+    Futures,
+    Options,
+    Swaps,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
+pub enum OptionType {
+    Call,
+    Put,
+}
