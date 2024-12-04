@@ -15,7 +15,7 @@ use {
 #[derive(Accounts)]
 #[instruction(params: SettleFuturesContractParams)]
 pub struct SettleFuturesContract<'info> {
-    #[account(mut,
+    #[account(mut,has_one = owner,
         constraint = derivative_contract.is_initialized @ CustomError::AccountNotInitialized,
     )]
     pub derivative_contract: Account<'info, DerivativeContract>,
