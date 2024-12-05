@@ -5,7 +5,7 @@ use {
         error::CustomError,
         state::{deposit_base::DepositBase, derivative_contract::DerivativeContract},
     },
-    anchor_lang::prelude::*,
+    anchor_lang::{prelude::*, system_program},
     anchor_spl::{
         associated_token::AssociatedToken,
         token::{transfer_checked, Mint, Token, TokenAccount, TransferChecked},
@@ -29,11 +29,21 @@ pub struct SettleFuturesContract<'info> {
         constraint = deposit_account.is_initialized @ CustomError::AccountNotInitialized
     )]
     pub deposit_account: Account<'info, DepositBase>,
+    /*
     #[account(seeds = [b"auth", deposit_account.key().as_ref()], bump)]
     /// CHECK: no need to check this.
     pub pda_auth: UncheckedAccount<'info>,
     #[account(mut, seeds = [b"treasury-vault", pda_auth.key().as_ref()], bump)]
     pub treasury_vault: SystemAccount<'info>,
+    */
+    #[account(seeds = [b"auth", deposit_account.key().as_ref()], bump = deposit_account.admin_auth_bump)]
+    /// CHECK: no need to check this.
+    pub pda_auth: UncheckedAccount<'info>,
+    #[account(mut, seeds = [b"treasury-vault", pda_auth.key().as_ref()], bump = deposit_account.admin_treasury_vault_bump.unwrap())]
+    pub treasury_vault: SystemAccount<'info>,
+    // mut makes it changeble (mutable)
+    #[account(mut)]
+    pub seller: Signer<'info>,
     // mut makes it changeble (mutable)
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -45,6 +55,7 @@ pub struct SettleFuturesContract<'info> {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SettleFuturesContractParams {
     pub amount: u32,
+    pub funds_amount: u64,
     pub buyer: Pubkey,
 }
 
@@ -58,6 +69,7 @@ pub fn settle_futures_contract(
     }
 
     let derivative_contract = &mut ctx.accounts.derivative_contract;
+    let sys_program = &ctx.accounts.system_program;
     let sender_tokens = &ctx.accounts.sender_tokens;
     let recipient_tokens = &ctx.accounts.recipient_tokens;
     let mint_token = &ctx.accounts.mint_token;
@@ -67,6 +79,7 @@ pub fn settle_futures_contract(
     let token_program = &ctx.accounts.token_program;
     let decimals: u8 = derivative_contract.decimals;
     let _amount = params.amount;
+    let funds_amount = params.funds_amount;
 
     let buyer = match derivative_contract.buyer {
         Some(buyer) => buyer,
@@ -89,7 +102,7 @@ pub fn settle_futures_contract(
         .checked_mul(result as u64)
         .ok_or(CustomError::InvalidArithmeticOperation)?;
 
-    // Transfer funds from treasury vault to recipient
+    // Transfer assets from treasury vault to recipient - buyer
     let cpi_accounts = TransferChecked {
         from: sender_tokens.to_account_info(),
         mint: mint_token.to_account_info(),
@@ -108,6 +121,24 @@ pub fn settle_futures_contract(
     let cpi = CpiContext::new_with_signer(token_program.to_account_info(), cpi_accounts, signer);
 
     transfer_checked(cpi, _amount, decimals)?;
+
+    // Transfer funds(sol) from treasury vault to recipient - seller
+    let cpi_accounts = system_program::Transfer {
+        from: treasury_vault.to_account_info(),
+        to: ctx.accounts.seller.to_account_info(),
+    };
+
+    let seeds = &[
+        b"treasury-vault",
+        pda_auth.to_account_info().key.as_ref(),
+        &[deposit_account.admin_treasury_vault_bump.unwrap()],
+    ];
+
+    let signer = &[&seeds[..]];
+
+    let cpi = CpiContext::new_with_signer(sys_program.to_account_info(), cpi_accounts, signer);
+
+    system_program::transfer(cpi, funds_amount)?;
 
     Ok(())
 }

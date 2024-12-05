@@ -123,12 +123,12 @@ describe("derivatives_contract", () => {
 
   it("Is initialized!", async () => {
     try {
-      let initParams = {
+      let requestParams = {
         decimals: 9, // token mint in smallest unit i.e 9 decimals
       };
 
       const tx = await program.methods
-        .init(initParams)
+        .init(requestParams)
         .accounts({
           owner: adminOwner.publicKey,
           derivativeContract: derivativeContract,
@@ -159,12 +159,12 @@ describe("derivatives_contract", () => {
     console.log("token account: ", tokenAccount.toBase58());
 
     try {
-      let initParams = {
+      let requestParams = {
         amount: new anchor.BN(200),
       };
 
       const tx = await program.methods
-        .createToken(initParams)
+        .createToken(requestParams)
         .accounts({
           owner: payer.publicKey,
           derivativeContract: derivativeContract,
@@ -201,11 +201,11 @@ describe("derivatives_contract", () => {
     }
 
     try {
-      let initParams = {
+      let requestParams = {
         amount: new anchor.BN(70),
       };
       const tx = await program.methods
-        .transferToken(initParams)
+        .transferToken(requestParams)
         .accounts({
           owner: payer.publicKey,
           derivativeContract: derivativeContract,
@@ -227,7 +227,7 @@ describe("derivatives_contract", () => {
 
   it("Is create futures contract!", async () => {
     try {
-      let initParams = {
+      let requestParams = {
         expiryDate: new anchor.BN(12),
         underlyingAsset: mintToken.publicKey,
         price: new anchor.BN(3),
@@ -236,7 +236,7 @@ describe("derivatives_contract", () => {
       };
 
       const tx = await program.methods
-        .createFuturesContract(initParams)
+        .createFuturesContract(requestParams)
         .accounts({
           owner: adminOwner.publicKey,
           derivativeContract: derivativeContract,
@@ -267,13 +267,13 @@ describe("derivatives_contract", () => {
     }
 
     try {
-      let initParams = {
+      let requestParams = {
         // 1 amount of token to transfer (in smallest unit i.e 9 decimals)
         amount: new anchor.BN(20),
       };
 
       const tx = await program.methods
-        .depositAsset(initParams)
+        .depositAsset(requestParams)
         .accounts({
           owner: sellerOwner.publicKey,
           derivativeContract: derivativeContract,
@@ -285,6 +285,40 @@ describe("derivatives_contract", () => {
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .signers([sellerOwner])
+        .rpc();
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error);
+    }
+
+    try {
+      let result = await program.account.derivativeContract.fetch(
+        derivativeContract
+      );
+      console.log("derivative contract: ", result);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("Is deposit funds - buyer!", async () => {
+    try {
+      let requestParams = {
+        // amount of sol to transfer
+        amount: new anchor.BN(5 * anchor.web3.LAMPORTS_PER_SOL),
+      };
+
+      const tx = await program.methods
+        .depositFunds(requestParams)
+        .accounts({
+          owner: buyerOwner.publicKey,
+          derivativeContract: derivativeContract,
+          depositAccount: depositAccount.publicKey,
+          pdaAuth: pdaAuth,
+          treasuryVault: treasuryVault,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([buyerOwner])
         .rpc();
       console.log("Your transaction signature", tx);
     } catch (error) {
@@ -320,15 +354,17 @@ describe("derivatives_contract", () => {
     }
 
     try {
-      let initParams = {
+      let requestParams = {
         // 1 amount of token to transfer (in smallest unit i.e 9 decimals)
         amount: new anchor.BN(2),
+        fundsAmount: new anchor.BN(5 * anchor.web3.LAMPORTS_PER_SOL),
         buyer: buyerOwner.publicKey,
       };
       const tx = await program.methods
-        .settleFuturesContract(initParams)
+        .settleFuturesContract(requestParams)
         .accounts({
           owner: adminOwner.publicKey,
+          seller: sellerOwner,
           derivativeContract: derivativeContract,
           senderTokens: treasuryVaultATA.address,
           recipientTokens: buyerOwnerATA.publicKey,

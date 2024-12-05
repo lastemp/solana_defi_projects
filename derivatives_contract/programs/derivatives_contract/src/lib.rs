@@ -35,6 +35,10 @@ pub mod derivatives_contract {
         instructions::deposit_asset(ctx, &params)
     }
 
+    pub fn deposit_funds(ctx: Context<DepositFunds>, params: DepositFundsParams) -> Result<()> {
+        instructions::deposit_funds(ctx, &params)
+    }
+
     // _buyer gets asset
     // _seller gets sol
     pub fn settle_futures_contract(
