@@ -2,12 +2,14 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum CustomError {
-    #[msg("Invalid operator length")]
-    InvalidOperatorLength,
-    #[msg("Invalid lottery game name length")]
-    InvalidLotteryGameNameLength,
-    #[msg("Invalid value date length")]
-    InvalidValueDateLength,
+    #[msg("Invalid buyer")]
+    InvalidBuyer,
+    #[msg("Invalid seller")]
+    InvalidSeller,
+    #[msg("Buyer not found")]
+    BuyerNotFound,
+    #[msg("Seller not found")]
+    SellerNotFound,
     #[msg("Invalid amount.")]
     InvalidAmount,
     #[msg("Available balance should match tranfer amount.")]

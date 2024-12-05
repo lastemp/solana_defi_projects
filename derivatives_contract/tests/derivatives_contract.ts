@@ -30,6 +30,7 @@ describe("derivatives_contract", () => {
   });
 
   let buyerOwner = anchor.web3.Keypair.generate();
+  let buyerOwnerATA = anchor.web3.Keypair.generate();
   let sellerOwner = anchor.web3.Keypair.generate();
   let sellerOwnerATA = anchor.web3.Keypair.generate();
 
@@ -57,6 +58,7 @@ describe("derivatives_contract", () => {
     program.programId
   );
 
+  /*
   let [buyer] = anchor.web3.PublicKey.findProgramAddressSync(
     [anchor.utils.bytes.utf8.encode("buyer"), buyerOwner.publicKey.toBuffer()],
     program.programId
@@ -69,6 +71,7 @@ describe("derivatives_contract", () => {
     ],
     program.programId
   );
+  */
 
   // admin owner
   before(async () => {
@@ -228,8 +231,8 @@ describe("derivatives_contract", () => {
         expiryDate: new anchor.BN(12),
         underlyingAsset: mintToken.publicKey,
         price: new anchor.BN(3),
-        buyer: buyer,
-        seller: seller,
+        buyer: buyerOwner.publicKey,
+        seller: sellerOwner.publicKey,
       };
 
       const tx = await program.methods
@@ -299,16 +302,18 @@ describe("derivatives_contract", () => {
   });
 
   it("Is settle futures contract!", async () => {
+    console.log(
+      "buyer owner token account: ",
+      buyerOwnerATA.publicKey.toBase58()
+    );
+
     try {
-      treasuryVaultATA = await getOrCreateAssociatedTokenAccount(
+      await createAccount(
         provider.connection,
-        payer,
+        buyerOwner,
         mintToken.publicKey,
-        treasuryVault,
-        true
-      );
-      console.log(
-        "treasuryVaultATA address: " + treasuryVaultATA.address.toBase58()
+        buyerOwner.publicKey,
+        buyerOwnerATA
       );
     } catch (error) {
       console.log(error);
@@ -317,17 +322,20 @@ describe("derivatives_contract", () => {
     try {
       let initParams = {
         // 1 amount of token to transfer (in smallest unit i.e 9 decimals)
-        amount: new anchor.BN(5),
+        amount: new anchor.BN(2),
+        buyer: buyerOwner.publicKey,
       };
-
       const tx = await program.methods
         .settleFuturesContract(initParams)
         .accounts({
           owner: adminOwner.publicKey,
           derivativeContract: derivativeContract,
           senderTokens: treasuryVaultATA.address,
-          recipientTokens: buyer,
+          recipientTokens: buyerOwnerATA.publicKey,
           mintToken: mintToken.publicKey,
+          depositAccount: depositAccount.publicKey,
+          pdaAuth: pdaAuth,
+          treasuryVault: treasuryVault,
           tokenProgram: TOKEN_PROGRAM_ID,
           associateTokenProgram: associateTokenProgram,
           systemProgram: anchor.web3.SystemProgram.programId,
@@ -340,10 +348,15 @@ describe("derivatives_contract", () => {
     }
 
     try {
-      let result = await program.account.derivativeContract.fetch(
+      let result = await program.account.depositBase.fetch(
+        depositAccount.publicKey
+      );
+      console.log("deposit account: ", result);
+
+      let result2 = await program.account.derivativeContract.fetch(
         derivativeContract
       );
-      console.log("derivative contract: ", result);
+      console.log("derivative contract: ", result2);
     } catch (error) {
       console.log(error);
     }

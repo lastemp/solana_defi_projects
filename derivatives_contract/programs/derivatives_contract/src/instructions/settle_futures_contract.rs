@@ -45,6 +45,7 @@ pub struct SettleFuturesContract<'info> {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SettleFuturesContractParams {
     pub amount: u32,
+    pub buyer: Pubkey,
 }
 
 pub fn settle_futures_contract(
@@ -66,8 +67,15 @@ pub fn settle_futures_contract(
     let token_program = &ctx.accounts.token_program;
     let decimals: u8 = derivative_contract.decimals;
     let _amount = params.amount;
-    let _buyer: Option<Pubkey> = derivative_contract.buyer;
-    let _seller: Option<Pubkey> = derivative_contract.seller;
+
+    let buyer = match derivative_contract.buyer {
+        Some(buyer) => buyer,
+        None => return Err(CustomError::BuyerNotFound.into()),
+    };
+
+    if params.buyer != buyer {
+        return Err(CustomError::InvalidBuyer.into());
+    }
 
     // _buyer gets asset
     // _seller gets sol

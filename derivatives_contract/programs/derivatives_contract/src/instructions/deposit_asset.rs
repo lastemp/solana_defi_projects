@@ -49,6 +49,15 @@ pub fn deposit_asset(ctx: Context<DepositAsset>, params: &DepositAssetParams) ->
     let decimals = derivative_contract.decimals as u64;
     let amount_ = params.amount;
 
+    let seller = match derivative_contract.seller {
+        Some(seller) => seller,
+        None => return Err(CustomError::SellerNotFound.into()),
+    };
+
+    if sender.key() != seller {
+        return Err(CustomError::InvalidSeller.into());
+    }
+
     let base: u32 = 10;
     let exponent = derivative_contract.decimals as u32;
 
