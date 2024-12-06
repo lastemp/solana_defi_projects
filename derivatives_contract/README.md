@@ -7,7 +7,10 @@ Below are some features contained in the program:
 
 - Initialise derivative contract
 - Create futures contract
+- Create options contract
+- Create swap contract
 - Deposit asset represented as wBTC token
+- Deposit funds represented as SOL
 - Settle futures contract
 - Create wBTC token (*for test purposes)
 - Transfer wBTC token

@@ -23,6 +23,20 @@ pub mod derivatives_contract {
         instructions::create_futures_contract(ctx, &params)
     }
 
+    pub fn create_options_contract(
+        ctx: Context<CreateOptionsContract>,
+        params: CreateOptionsContractParams,
+    ) -> Result<()> {
+        instructions::create_options_contract(ctx, &params)
+    }
+
+    pub fn create_swap_contract(
+        ctx: Context<CreateSwapContract>,
+        params: CreateSwapContractParams,
+    ) -> Result<()> {
+        instructions::create_swap_contract(ctx, &params)
+    }
+
     pub fn create_token(ctx: Context<CreateToken>, params: CreateTokenParams) -> Result<()> {
         instructions::create_token(ctx, &params)
     }
@@ -39,8 +53,6 @@ pub mod derivatives_contract {
         instructions::deposit_funds(ctx, &params)
     }
 
-    // _buyer gets asset
-    // _seller gets sol
     pub fn settle_futures_contract(
         ctx: Context<SettleFuturesContract>,
         params: SettleFuturesContractParams,

@@ -26,7 +26,7 @@ pub enum ContractType {
     Swaps,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq, InitSpace)]
+#[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone, PartialEq, Eq, InitSpace)]
 pub enum OptionType {
     Call,
     Put,

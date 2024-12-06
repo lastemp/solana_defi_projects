@@ -23,7 +23,7 @@ describe("derivatives_contract", () => {
   const associateTokenProgram = new anchor.web3.PublicKey(
     "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
   );
-  const mintToken = anchor.web3.Keypair.generate(); // dummy usdc token created for test purposes
+  const mintToken = anchor.web3.Keypair.generate(); // dummy wBTC token created for test purposes
   const tokenAccount = anchor.utils.token.associatedAddress({
     mint: mintToken.publicKey,
     owner: payer.publicKey,
@@ -57,21 +57,6 @@ describe("derivatives_contract", () => {
     ],
     program.programId
   );
-
-  /*
-  let [buyer] = anchor.web3.PublicKey.findProgramAddressSync(
-    [anchor.utils.bytes.utf8.encode("buyer"), buyerOwner.publicKey.toBuffer()],
-    program.programId
-  );
-
-  let [seller] = anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      anchor.utils.bytes.utf8.encode("seller"),
-      sellerOwner.publicKey.toBuffer(),
-    ],
-    program.programId
-  );
-  */
 
   // admin owner
   before(async () => {
@@ -237,6 +222,60 @@ describe("derivatives_contract", () => {
 
       const tx = await program.methods
         .createFuturesContract(requestParams)
+        .accounts({
+          owner: adminOwner.publicKey,
+          derivativeContract: derivativeContract,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([adminOwner])
+        .rpc();
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("Is create options contract!", async () => {
+    try {
+      let optionType = { call: {} };
+      let requestParams = {
+        expiryDate: new anchor.BN(12),
+        underlyingAsset: mintToken.publicKey,
+        strikePrice: new anchor.BN(3),
+        optionType: optionType,
+        buyer: buyerOwner.publicKey,
+        seller: sellerOwner.publicKey,
+      };
+
+      const tx = await program.methods
+        .createOptionsContract(requestParams)
+        .accounts({
+          owner: adminOwner.publicKey,
+          derivativeContract: derivativeContract,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([adminOwner])
+        .rpc();
+      console.log("Your transaction signature", tx);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("Is create swap contract!", async () => {
+    try {
+      let requestParams = {
+        expiryDate: new anchor.BN(12),
+        underlyingAsset: mintToken.publicKey,
+        notionalAmount: new anchor.BN(3),
+        fixedRate: new anchor.BN(10),
+        floatingRate: new anchor.BN(12),
+        buyer: buyerOwner.publicKey,
+        seller: sellerOwner.publicKey,
+      };
+
+      const tx = await program.methods
+        .createSwapContract(requestParams)
         .accounts({
           owner: adminOwner.publicKey,
           derivativeContract: derivativeContract,
