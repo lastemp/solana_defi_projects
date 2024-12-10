@@ -1,7 +1,7 @@
 # custodial_bridge
 
 This is a Custodial Bridge Rust Smart Contract(Solana Blockchain).
-A Custodial Bridge is a trusted, centralized/decentralized system for moving assets between blockchains by locking assets on one blockchain and minting their representation on another..
+A Custodial Bridge is a trusted, centralized/decentralized system for moving assets between blockchains by locking assets on one blockchain and minting their representation on another.
 
 Below are some features contained in the program:
 
