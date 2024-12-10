@@ -1,3 +1,4 @@
+use crate::{error::CustomError, state::deposit_base::DepositBase};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
 
@@ -15,6 +16,15 @@ pub struct DepositTokens<'info> {
     pub wrapped_mint: Account<'info, Mint>,
     #[account(mut)]
     pub user_wrapped_token_account: Account<'info, TokenAccount>,
+    #[account(mut,
+        constraint = deposit_account.is_initialized @ CustomError::AccountNotInitialized
+    )]
+    pub deposit_account: Account<'info, DepositBase>,
+    #[account(seeds = [b"auth", deposit_account.key().as_ref()], bump = deposit_account.admin_auth_bump)]
+    /// CHECK: no need to check this.
+    pub pda_auth: UncheckedAccount<'info>,
+    #[account(mut, seeds = [b"mint-authority", pda_auth.key().as_ref()], bump = deposit_account.admin_treasury_vault_bump.unwrap())]
+    pub mint_authority: SystemAccount<'info>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -36,7 +46,7 @@ impl<'info> DepositTokens<'info> {
             MintTo {
                 mint: self.wrapped_mint.to_account_info(),
                 to: self.user_wrapped_token_account.to_account_info(),
-                authority: self.custodian_token_account.to_account_info(),
+                authority: self.mint_authority.to_account_info(),
             },
         )
     }
@@ -50,11 +60,31 @@ pub struct DepositTokensParams {
 // Deposit tokens and mint wrapped tokens
 pub fn deposit_tokens(ctx: Context<DepositTokens>, params: &DepositTokensParams) -> Result<()> {
     let amount = params.amount;
+
+    msg!("Validate inputs");
+    if amount == 0 {
+        return Err(CustomError::InvalidAmount.into());
+    }
+
     // Transfer tokens from the user to the custodian
     token::transfer(ctx.accounts.into_transfer_context(), amount)?;
 
+    let deposit_account = &ctx.accounts.deposit_account;
+    let pda_auth = &mut ctx.accounts.pda_auth;
+
+    let seeds = &[
+        b"mint-authority",
+        pda_auth.to_account_info().key.as_ref(),
+        &[deposit_account.admin_treasury_vault_bump.unwrap()],
+    ];
+
+    let signer = &[&seeds[..]];
+
     // Mint wrapped tokens to the user's wrapped token account
-    token::mint_to(ctx.accounts.into_mint_to_context(), amount)?;
+    token::mint_to(
+        ctx.accounts.into_mint_to_context().with_signer(signer),
+        amount,
+    )?;
 
     Ok(())
 }

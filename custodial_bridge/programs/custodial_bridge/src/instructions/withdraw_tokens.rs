@@ -1,3 +1,4 @@
+use crate::{error::CustomError, state::deposit_base::DepositBase};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Burn, Mint, MintTo, Token, TokenAccount, Transfer};
 
@@ -36,7 +37,7 @@ impl<'info> WithdrawTokens<'info> {
             Transfer {
                 from: self.custodian_token_account.to_account_info(),
                 to: self.user_token_account.to_account_info(),
-                authority: self.custodian_token_account.to_account_info(),
+                authority: self.user.to_account_info(),
             },
         )
     }
@@ -50,6 +51,12 @@ pub struct WithdrawTokensParams {
 // Burn wrapped tokens and release original tokens
 pub fn withdraw_tokens(ctx: Context<WithdrawTokens>, params: &WithdrawTokensParams) -> Result<()> {
     let amount = params.amount;
+
+    msg!("Validate inputs");
+    if amount == 0 {
+        return Err(CustomError::InvalidAmount.into());
+    }
+
     // Burn wrapped tokens from the user's wrapped token account
     token::burn(ctx.accounts.into_burn_context(), amount)?;
 

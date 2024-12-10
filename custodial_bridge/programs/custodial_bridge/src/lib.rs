@@ -1,7 +1,7 @@
 //use anchor_lang::prelude::*;
-//pub mod error;
+pub mod error;
 pub mod instructions;
-//pub mod state;
+pub mod state;
 
 use {anchor_lang::prelude::*, instructions::*};
 
@@ -12,11 +12,9 @@ pub mod custodial_bridge {
     use super::*;
 
     // admin instructions
-    /*
-    pub fn init(ctx: Context<Init>, params: InitParams) -> Result<()> {
-        instructions::init(ctx, &params)
+    pub fn init(ctx: Context<Init>) -> Result<()> {
+        instructions::init(ctx)
     }
-    */
 
     // public instructions
     pub fn deposit_tokens(ctx: Context<DepositTokens>, params: DepositTokensParams) -> Result<()> {
