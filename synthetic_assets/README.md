@@ -15,11 +15,52 @@ Solana. Information about installing Rust can be found
 [here](https://rustup.rs/) and information about installing Solana can
 be found [here](https://docs.solana.com/cli/install-solana-cli-tools).
 
-Once you've completed the Solana installation run the following
-commands to configure your machine for local deployment:
+The smart contract needs to be deployed on Devnet as there is the dependency on the Bubblegum contract.
+
+## Install typescript client dependencies
+
+All the following commands assume that your current working directory is _this_ directory. I.e.:
+
+```console
+$ pwd
+.../sky_trade_compressed_nft
+```
+
+1. JavaScript client for Mpl Bubblegum:
+
+   ```
+   npm install @metaplex-foundation/mpl-bubblegum
+   ```
+
+1. Metaplex JavaScript SDK:
+
+   ```
+   npm install @metaplex-foundation/js @solana/web3.js
+   ```
+   
+1. A TypeScript library for interacting with SPL Account Compression and SPL NoOp:
+
+   ```
+   npm install --save @solana/spl-account-compression @solana/web3.js
+   ```
+   
+   or
+   
+   ```
+   yarn add @solana/spl-account-compression @solana/web3.js
+   ```
+   
+1. JavaScript client for Mpl Token Metadata:
+
+   ```
+   npm i @metaplex-foundation/mpl-token-metadata
+   ```
+   
+Once you've completed the installations run the following
+commands to configure your machine for deployment:
 
 ```
-solana config set --url localhost
+solana config set --url devnet
 solana-keygen new
 ```
 
@@ -33,7 +74,7 @@ Having done that run a local Solana validator by executing:
 solana-test-validator
 ```
 
-This program must be left running in a separate terminal window.
+This program must be left running in a separate terminal window.   
 
 ## Deploying the Solana program
 
