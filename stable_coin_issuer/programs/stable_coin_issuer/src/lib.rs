@@ -1,0 +1,33 @@
+//use anchor_lang::prelude::*;
+pub mod error;
+pub mod instructions;
+pub mod state;
+
+use {anchor_lang::prelude::*, instructions::*};
+
+declare_id!("2HNQZmuxm5zFZu64rzBjPj4DKCRCVwcc7cTvP8KgQ1wq");
+
+#[program]
+pub mod stable_coin_issuer {
+    use super::*;
+
+    // admin instructions
+    pub fn init(ctx: Context<Init>) -> Result<()> {
+        instructions::init(ctx)
+    }
+
+    // public instructions
+    pub fn deposit_tokens(ctx: Context<DepositTokens>, params: DepositTokensParams) -> Result<()> {
+        instructions::deposit_tokens(ctx, &params)
+    }
+
+    pub fn withdraw_tokens(
+        ctx: Context<WithdrawTokens>,
+        params: WithdrawTokensParams,
+    ) -> Result<()> {
+        instructions::withdraw_tokens(ctx, &params)
+    }
+}
+
+#[derive(Accounts)]
+pub struct Initialize {}
