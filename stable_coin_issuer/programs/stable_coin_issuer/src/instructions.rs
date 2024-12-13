@@ -2,8 +2,8 @@
 pub mod init;
 
 // public instructions
-pub mod deposit_tokens;
-pub mod withdraw_tokens;
+pub mod deposit;
+pub mod withdrawal;
 
 // bring everything in scope
-pub use {deposit_tokens::*, init::*, withdraw_tokens::*};
+pub use {deposit::*, init::*, withdrawal::*};

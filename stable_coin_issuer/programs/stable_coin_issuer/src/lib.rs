@@ -1,4 +1,3 @@
-//use anchor_lang::prelude::*;
 pub mod error;
 pub mod instructions;
 pub mod state;
@@ -17,15 +16,12 @@ pub mod stable_coin_issuer {
     }
 
     // public instructions
-    pub fn deposit_tokens(ctx: Context<DepositTokens>, params: DepositTokensParams) -> Result<()> {
-        instructions::deposit_tokens(ctx, &params)
+    pub fn deposit(ctx: Context<Deposit>, params: DepositParams) -> Result<()> {
+        instructions::deposit(ctx, &params)
     }
 
-    pub fn withdraw_tokens(
-        ctx: Context<WithdrawTokens>,
-        params: WithdrawTokensParams,
-    ) -> Result<()> {
-        instructions::withdraw_tokens(ctx, &params)
+    pub fn withdraw(ctx: Context<Withdrawal>, params: WithdrawalParams) -> Result<()> {
+        instructions::withdraw(ctx, &params)
     }
 }
 

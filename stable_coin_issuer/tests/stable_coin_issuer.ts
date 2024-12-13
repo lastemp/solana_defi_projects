@@ -48,7 +48,7 @@ describe("stable_coin_issuer", () => {
   before(async () => {
     let res = await provider.connection.requestAirdrop(
       userOwner.publicKey,
-      200 * anchor.web3.LAMPORTS_PER_SOL
+      10 * anchor.web3.LAMPORTS_PER_SOL
     );
 
     let latestBlockHash = await provider.connection.getLatestBlockhash();
@@ -98,19 +98,18 @@ describe("stable_coin_issuer", () => {
     }
   });
 
-  it("Deposits tokens and mints wrapped tokens", async () => {
+  it("Deposits funds and mints wrapped tokens", async () => {
+    // Lets assume 1 sol is equal to 100 usdc
     let requestParams = {
-      depositAmount: new anchor.BN(100 * anchor.web3.LAMPORTS_PER_SOL),
+      depositAmount: new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL),
       stableCoinAmount: new anchor.BN(100),
     };
 
     try {
       const tx = await program.methods
-        .depositTokens(requestParams)
+        .deposit(requestParams)
         .accounts({
           user: userOwner.publicKey,
-          //userTokenAccount: userTokenAccount.address,
-          //custodianTokenAccount: custodianTokenAccount.address,
           wrappedMint: wrappedMint,
           userWrappedTokenAccount: userWrappedTokenAccount.address,
           depositAccount: depositAccount.publicKey,
@@ -139,26 +138,23 @@ describe("stable_coin_issuer", () => {
     console.log("userOwner address: " + userOwner.publicKey.toBase58());
     console.log("treasuryVault address: " + treasuryVault.toBase58());
 
-    //assert.strictEqual(Number(userTokenAccountInfo.amount), Number(900)); // 100 tokens deducted
-    //assert.strictEqual(Number(custodianTokenAccountInfo.amount), Number(100)); // 100 tokens in custodian account
     assert.strictEqual(Number(userWrappedTokenAccountInfo.amount), Number(100)); // 100 wrapped tokens minted
   });
 
-  it("Withdraws tokens and burns wrapped tokens", async () => {
+  it("Withdraw funds and burns wrapped tokens", async () => {
+    // Lets assume 1 sol is equal to 100 usdc
     let requestParams = {
-      depositAmount: new anchor.BN(100 * anchor.web3.LAMPORTS_PER_SOL),
+      withdrawalAmount: new anchor.BN(1 * anchor.web3.LAMPORTS_PER_SOL),
       stableCoinAmount: new anchor.BN(100),
     };
 
     try {
       const tx = await program.methods
-        .withdrawTokens(requestParams)
+        .withdraw(requestParams)
         .accounts({
           user: userOwner.publicKey,
-          //custodianTokenAccount: custodianTokenAccount.address,
           wrappedMint: wrappedMint,
           userWrappedTokenAccount: userWrappedTokenAccount.address,
-          //userTokenAccount: userTokenAccount.address,
           depositAccount: depositAccount.publicKey,
           pdaAuth: pdaAuth,
           treasuryVault: treasuryVault,
@@ -183,8 +179,6 @@ describe("stable_coin_issuer", () => {
       Number(userWrappedTokenAccountInfo.amount)
     );
 
-    //assert.strictEqual(Number(userTokenAccountInfo.amount), Number(1000)); // Tokens returned to user
-    //assert.strictEqual(Number(custodianTokenAccountInfo.amount), Number(0)); // Custodian account emptied
     assert.strictEqual(Number(userWrappedTokenAccountInfo.amount), Number(0)); // Wrapped tokens burned
   });
 });
